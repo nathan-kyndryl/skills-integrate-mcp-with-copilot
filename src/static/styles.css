@@ -16,12 +16,48 @@ body {
 }
 
 header {
+  position: relative;
   text-align: center;
   padding: 20px 0;
   margin-bottom: 30px;
   background-color: #1a237e;
   color: white;
   border-radius: 5px;
+}
+
+.teacher-access {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  text-align: left;
+}
+
+#login-form,
+#teacher-status {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+#login-form input {
+  width: 130px;
+  padding: 7px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+#login-form label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+.teacher-access button {
+  padding: 7px 10px;
+  font-size: 14px;
 }
 
 header h1 {
@@ -38,6 +74,21 @@ main {
 @media (min-width: 768px) {
   main {
     grid-template-columns: 2fr 1fr;
+  }
+}
+
+@media (max-width: 767px) {
+  .teacher-access {
+    position: static;
+    display: flex;
+    justify-content: center;
+    margin-top: 15px;
+  }
+
+  #login-form,
+  #teacher-status {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 }
 

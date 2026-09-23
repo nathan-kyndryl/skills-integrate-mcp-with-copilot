@@ -3,6 +3,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const activitySelect = document.getElementById("activity");
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
+  const loginToggle = document.getElementById("login-toggle");
+  const loginForm = document.getElementById("login-form");
+  const teacherStatus = document.getElementById("teacher-status");
+  const logoutButton = document.getElementById("logout-button");
+  const signupContainer = document.getElementById("signup-container");
+  let teacherToken = sessionStorage.getItem("teacherToken");
+
+  function updateTeacherMode() {
+    const loggedIn = Boolean(teacherToken);
+    loginToggle.classList.toggle("hidden", loggedIn);
+    loginForm.classList.toggle("hidden", loggedIn);
+    teacherStatus.classList.toggle("hidden", !loggedIn);
+    signupContainer.classList.toggle("hidden", !loggedIn);
+    document.querySelectorAll(".delete-btn").forEach((button) => {
+      button.classList.toggle("hidden", !loggedIn);
+    });
+  }
 
   // Function to fetch activities from API
   async function fetchActivities() {
@@ -60,6 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
       document.querySelectorAll(".delete-btn").forEach((button) => {
         button.addEventListener("click", handleUnregister);
       });
+      updateTeacherMode();
     } catch (error) {
       activitiesList.innerHTML =
         "<p>Failed to load activities. Please try again later.</p>";
@@ -80,6 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
         )}/unregister?email=${encodeURIComponent(email)}`,
         {
           method: "DELETE",
+          headers: { Authorization: `Bearer ${teacherToken}` },
         }
       );
 
@@ -93,6 +112,11 @@ document.addEventListener("DOMContentLoaded", () => {
         fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
+        if (response.status === 401) {
+          teacherToken = null;
+          sessionStorage.removeItem("teacherToken");
+          updateTeacherMode();
+        }
         messageDiv.className = "error";
       }
 
@@ -124,6 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
         )}/signup?email=${encodeURIComponent(email)}`,
         {
           method: "POST",
+          headers: { Authorization: `Bearer ${teacherToken}` },
         }
       );
 
@@ -138,6 +163,11 @@ document.addEventListener("DOMContentLoaded", () => {
         fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
+        if (response.status === 401) {
+          teacherToken = null;
+          sessionStorage.removeItem("teacherToken");
+          updateTeacherMode();
+        }
         messageDiv.className = "error";
       }
 
@@ -155,6 +185,46 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  loginToggle.addEventListener("click", () => {
+    loginForm.classList.toggle("hidden");
+  });
+
+  loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const response = await fetch("/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: document.getElementById("username").value,
+        password: document.getElementById("password").value,
+      }),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      messageDiv.textContent = result.detail || "Unable to log in";
+      messageDiv.className = "error";
+      messageDiv.classList.remove("hidden");
+      return;
+    }
+    teacherToken = result.token;
+    sessionStorage.setItem("teacherToken", teacherToken);
+    loginForm.reset();
+    updateTeacherMode();
+    fetchActivities();
+  });
+
+  logoutButton.addEventListener("click", async () => {
+    await fetch("/auth/logout", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${teacherToken}` },
+    });
+    teacherToken = null;
+    sessionStorage.removeItem("teacherToken");
+    updateTeacherMode();
+    fetchActivities();
+  });
+
   // Initialize app
+  updateTeacherMode();
   fetchActivities();
 });
